@@ -73,6 +73,7 @@ var svr = net.createServer(function(sock) {
 
 console.log('Connected: ' + sock.remoteAddress + ':' + sock.remotePort);
 sockets.push(sock);
+sock.current = "default";
 
 sock.on('data', function(data) {
 	console.log(data.toString());
@@ -102,6 +103,7 @@ sock.on('data', function(data) {
 				console.log(err);
 				//Message user of error.
 			});
+		sock.current = jsonObject.target;
 	}
 
 	else if (jsonObject.command == "addUser") {
@@ -119,6 +121,7 @@ sock.on('data', function(data) {
 	}
 
 	else if (jsonObject.command == "push") {
+		console.log(sock.current);
 		noteModel.findOne({title: jsonObject.target}, function(err, noteObj) {
 			if (err) {
 				console.log(err);
@@ -129,6 +132,23 @@ sock.on('data', function(data) {
 				noteObj.save();
 				console.log(noteObj.data);
 				//Broadcast here
+				for (var i = 0; i < sockets.length; i++) {
+					var user = sockets[i];
+					if (!(user === undefined || user === null)) {
+					if (user.current === jsonObject.target && user != sock) {
+						var jsonVariable = {};
+						jsonVariable["command"] = "update";
+						jsonVariable["data"] = noteObj.note;
+						console.log(noteObj.data);
+						jsonVariable = JSON.stringify(jsonVariable);
+						jsonVariable += '\n';
+						user.write(jsonVariable);
+					}
+				}
+
+				}
+
+
 			}
 			else {
 				var newNote = noteModel({title: jsonObject.target, note: jsonObject.data, users: [sock.email]});
@@ -139,6 +159,7 @@ sock.on('data', function(data) {
 				console.log("Note not found, creating");
 			}
 				});
+		sock.current = jsonObject.target;
 	}	
 	else if (jsonObject.command == "pull") {
 		noteModel.findOne({title : jsonObject.target}, function(err, noteObj) {
@@ -159,6 +180,7 @@ sock.on('data', function(data) {
 				//Message error to client
 			}
 		})
+		sock.current = jsonObject.target;
 	}
 	else if (jsonObject.command == "list") {
 		console.log("List command received");
