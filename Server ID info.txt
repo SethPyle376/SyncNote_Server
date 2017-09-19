@@ -1,7 +1,0 @@
-CLIENT ID 
-
-326666285269-q5lt8d371gf13sgs4f9il8q658eu9km6.apps.googleusercontent.com
-
-CLIENT SECRET
-
-hlgarFy0zoJQ879ehYpLEWIe
